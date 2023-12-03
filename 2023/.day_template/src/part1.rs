@@ -10,7 +10,7 @@ mod tests {
 
     #[test]
     fn test_solve() -> Result<(), Box<dyn Error>> {
-        todo!("Implement test")
+        todo!("Implement test");
         let input = "";
         assert_eq!("", solve(input)?);
         Ok(())
