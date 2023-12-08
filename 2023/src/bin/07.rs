@@ -1,5 +1,3 @@
-use itertools::Itertools;
-
 advent_of_code::solution!(7);
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
