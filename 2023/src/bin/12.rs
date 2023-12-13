@@ -4,92 +4,67 @@ use itertools::Itertools;
 
 advent_of_code::solution!(12);
 
-fn combinations<'a>(
+fn operational<'a>(
     chars: &'a [char],
-    numbers: &'a [u64],
-    mem: &mut HashMap<(&'a [u64], &'a [char]), u64>,
+    numbers: &'a [u32],
+    count: u32,
+    cache: &mut HashMap<(&'a [char], &'a [u32], u32), u64>,
 ) -> u64 {
-    if chars.is_empty() {
-        if numbers.is_empty() {
-            return 1;
-        } else {
-            return 0;
-        }
+    if numbers.first().is_some_and(|x| *x == count) {
+        permutations(&chars[1..], &numbers[1..], 0, cache)
+    } else if count == 0 {
+        permutations(&chars[1..], numbers, 0, cache)
+    } else {
+        0
+    }
+}
+
+fn damaged<'a>(
+    chars: &'a [char],
+    numbers: &'a [u32],
+    count: u32,
+    cache: &mut HashMap<(&'a [char], &'a [u32], u32), u64>,
+) -> u64 {
+    if numbers.first().map_or(true, |x| *x <= count) {
+        0
+    } else {
+        permutations(&chars[1..], numbers, count + 1, cache)
+    }
+}
+
+fn permutations<'a>(
+    chars: &'a [char],
+    numbers: &'a [u32],
+    count: u32,
+    cache: &mut HashMap<(&'a [char], &'a [u32], u32), u64>,
+) -> u64 {
+    if let Some(cached) = cache.get(&(chars, numbers, count)) {
+        return *cached;
     }
 
-    let next_combinations_same_instr = combinations(&chars[1..], numbers, mem);
-
-    match chars[0] {
-        '.' => next_combinations_same_instr,
-        '#' => {
-            if let Some(&curr_combinations) = mem.get(&(&numbers, &chars)) {
-                return curr_combinations;
-            }
-
-            if numbers.is_empty() {
-                return 0;
-            }
-
-            let wanted_spring_len = numbers[0] as usize;
-            if chars.len() < wanted_spring_len || chars[0..wanted_spring_len].contains(&'.') {
-                return 0;
-            } else if chars.len() == wanted_spring_len {
-                if numbers.len() == 1 {
-                    return 1;
-                }
-                return 0;
-            } else if chars[wanted_spring_len] == '#' {
-                return 0;
-            }
-
-            let next_combinations_next_instr: u64 =
-                combinations(&chars[(wanted_spring_len + 1)..], &numbers[1..], mem);
-
-            mem.insert((&numbers, &chars), next_combinations_next_instr);
-
-            next_combinations_next_instr
+    let num_of_permutations = match chars.first() {
+        Some('.') => operational(chars, numbers, count, cache),
+        Some('#') => damaged(chars, numbers, count, cache),
+        Some('?') => {
+            operational(chars, numbers, count, cache) + damaged(chars, numbers, count, cache)
         }
-        '?' => {
-            if let Some(&curr_combinations) = mem.get(&(&numbers, &chars)) {
-                return curr_combinations + next_combinations_same_instr;
-            }
+        None if numbers.is_empty() || numbers == [count] => 1,
+        None => 0,
+        Some(_) => panic!("wrong character"),
+    };
 
-            if numbers.is_empty() {
-                return next_combinations_same_instr;
-            }
-
-            let wanted_spring_len = numbers[0] as usize;
-            if chars.len() < wanted_spring_len || chars[0..wanted_spring_len].contains(&'.') {
-                return next_combinations_same_instr;
-            } else if chars.len() == wanted_spring_len {
-                if numbers.len() == 1 {
-                    return 1 + next_combinations_same_instr;
-                }
-
-                return next_combinations_same_instr;
-            } else if chars[wanted_spring_len] == '#' {
-                return next_combinations_same_instr;
-            }
-
-            let next_combinations_next_instr: u64 =
-                combinations(&chars[(wanted_spring_len + 1)..], &numbers[1..], mem);
-
-            mem.insert((&numbers, &chars), next_combinations_next_instr);
-
-            next_combinations_next_instr + next_combinations_same_instr
-        }
-        _ => panic!("Invalid spring"),
-    }
+    cache.insert((chars, numbers, count), num_of_permutations);
+    num_of_permutations
 }
 
 fn solve_line(line: &str) -> Option<u64> {
     let (template, numbers) = line.split_once(' ').unwrap();
 
     let template: Vec<char> = template.chars().collect();
-    let numbers: Vec<u64> = numbers.split(',').map(|x| x.parse().unwrap()).collect();
+    let numbers: Vec<u32> = numbers.split(',').map(|x| x.parse().unwrap()).collect();
     let mut mem = HashMap::new();
 
-    Some(combinations(&template, &numbers, &mut mem))
+    Some(permutations(&template, &numbers, 0, &mut mem))
 }
 
 pub fn part_one(input: &str) -> Option<u64> {
