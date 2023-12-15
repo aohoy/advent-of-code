@@ -16,47 +16,62 @@ pub fn part_one(input: &str) -> Option<u32> {
         .enumerate()
         .flat_map(|(y, line)| {
             let mut prev_num: u32 = 0;
-            line.chars()
-                .enumerate()
-                .map(move |(x, ch)| {
-                    (
-                        (y as i32, x as i32),
-                        match ch {
-                            '0'..='9' => {prev_num = prev_num * 10 + ch.to_digit(10).unwrap(); Value::Num(prev_num)},
-                            '.' => {prev_num = 0; Value::Dot},
-                            _ => {prev_num = 0; Value::Symbol},
+            line.chars().enumerate().map(move |(x, ch)| {
+                (
+                    (y as i32, x as i32),
+                    match ch {
+                        '0'..='9' => {
+                            prev_num = prev_num * 10 + ch.to_digit(10).unwrap();
+                            Value::Num(prev_num)
                         }
-                    )
-                })
-                
+                        '.' => {
+                            prev_num = 0;
+                            Value::Dot
+                        }
+                        _ => {
+                            prev_num = 0;
+                            Value::Symbol
+                        }
+                    },
+                )
+            })
         })
-        .collect::<BTreeMap<(i32,i32), Value>>();
-    let mut visited = BTreeSet::<(i32,i32)>::new();
+        .collect::<BTreeMap<(i32, i32), Value>>();
+    let mut visited = BTreeSet::<(i32, i32)>::new();
     let (_, line) = input.lines().enumerate().last().unwrap();
     let size_x: i32 = line.len().try_into().unwrap();
 
-    map
-        .iter()
+    map.iter()
         .flat_map(|((y, x), val)| {
             let pos = [
-                (-1, -1), (-1, 0), (-1, 1),
-                (0, -1),           (0, 1),
-                (1, -1),  (1, 0),  (1, 1),
+                (-1, -1),
+                (-1, 0),
+                (-1, 1),
+                (0, -1),
+                (0, 1),
+                (1, -1),
+                (1, 0),
+                (1, 1),
             ];
             let mut res: Vec<u32> = vec![];
             if let Value::Symbol = val {
-                res = pos.iter().filter_map(|(yp, xp)| {
-                    match map.get(&(y + yp, x + xp)).unwrap() {
+                res = pos
+                    .iter()
+                    .filter_map(|(yp, xp)| match map.get(&(y + yp, x + xp)).unwrap() {
                         Value::Num(_) => {
-                            let fx = (x+xp..size_x)
+                            let fx = (x + xp..size_x)
                                 .take_while(|&xf| {
-                                    match map.get(&(y + yp, xf)) {
-                                        Some(Value::Num(_)) => true,
-                                        _ => false,
-                                    }
+                                    matches!(map.get(&(y + yp, xf)), Some(Value::Num(_)))
                                 })
                                 .last()
-                                .and_then(|xf| if !visited.contains(&(y + yp, xf)) {visited.insert((y+yp, xf)); Some(xf)} else {None} );
+                                .and_then(|xf| {
+                                    if !visited.contains(&(y + yp, xf)) {
+                                        visited.insert((y + yp, xf));
+                                        Some(xf)
+                                    } else {
+                                        None
+                                    }
+                                });
                             match fx {
                                 Some(fx) => match map.get(&(y + yp, fx)).unwrap() {
                                     Value::Num(fnum) => Some(*fnum),
@@ -64,12 +79,10 @@ pub fn part_one(input: &str) -> Option<u32> {
                                 },
                                 None => None,
                             }
-                            
-                        },
+                        }
                         _ => None,
-                    }
-                })
-                .collect::<Vec<u32>>();
+                    })
+                    .collect::<Vec<u32>>();
             };
             res
         })
@@ -82,47 +95,65 @@ pub fn part_two(input: &str) -> Option<u32> {
         .enumerate()
         .flat_map(|(y, line)| {
             let mut prev_num: u32 = 0;
-            line.chars()
-                .enumerate()
-                .map(move |(x, ch)| {
-                    (
-                        (y as i32, x as i32),
-                        match ch {
-                            '0'..='9' => {prev_num = prev_num * 10 + ch.to_digit(10).unwrap(); Value::Num(prev_num)},
-                            '.' => {prev_num = 0; Value::Dot},
-                            '*' => {prev_num = 0; Value::Star},
-                            _ => {prev_num = 0; Value::Symbol},
+            line.chars().enumerate().map(move |(x, ch)| {
+                (
+                    (y as i32, x as i32),
+                    match ch {
+                        '0'..='9' => {
+                            prev_num = prev_num * 10 + ch.to_digit(10).unwrap();
+                            Value::Num(prev_num)
                         }
-                    )
-                })
-                
+                        '.' => {
+                            prev_num = 0;
+                            Value::Dot
+                        }
+                        '*' => {
+                            prev_num = 0;
+                            Value::Star
+                        }
+                        _ => {
+                            prev_num = 0;
+                            Value::Symbol
+                        }
+                    },
+                )
+            })
         })
-        .collect::<BTreeMap<(i32,i32), Value>>();
-    let mut visited = BTreeSet::<(i32,i32)>::new();
+        .collect::<BTreeMap<(i32, i32), Value>>();
+    let mut visited = BTreeSet::<(i32, i32)>::new();
     let (_, line) = input.lines().enumerate().last().unwrap();
     let size_x: i32 = line.len().try_into().unwrap();
-    map
-        .iter()
+    map.iter()
         .flat_map(|((y, x), val)| {
             let pos = [
-                (-1, -1), (-1, 0), (-1, 1),
-                (0, -1),           (0, 1),
-                (1, -1),  (1, 0),  (1, 1),
+                (-1, -1),
+                (-1, 0),
+                (-1, 1),
+                (0, -1),
+                (0, 1),
+                (1, -1),
+                (1, 0),
+                (1, 1),
             ];
             let mut res: Vec<u32> = vec![];
             if let Value::Star = val {
-                res = pos.iter().filter_map(|(yp, xp)| {
-                    match map.get(&(y + yp, x + xp)).unwrap() {
+                res = pos
+                    .iter()
+                    .filter_map(|(yp, xp)| match map.get(&(y + yp, x + xp)).unwrap() {
                         Value::Num(_) => {
-                            let fx = (x+xp..size_x)
+                            let fx = (x + xp..size_x)
                                 .take_while(|&xf| {
-                                    match map.get(&(y + yp, xf)) {
-                                        Some(Value::Num(_)) => true,
-                                        _ => false,
-                                    }
+                                    matches!(map.get(&(y + yp, xf)), Some(Value::Num(_)))
                                 })
                                 .last()
-                                .and_then(|xf| if !visited.contains(&(y + yp, xf)) {visited.insert((y+yp, xf)); Some(xf)} else {None} );
+                                .and_then(|xf| {
+                                    if !visited.contains(&(y + yp, xf)) {
+                                        visited.insert((y + yp, xf));
+                                        Some(xf)
+                                    } else {
+                                        None
+                                    }
+                                });
                             match fx {
                                 Some(fx) => match map.get(&(y + yp, fx)).unwrap() {
                                     Value::Num(fnum) => Some(*fnum),
@@ -130,12 +161,10 @@ pub fn part_two(input: &str) -> Option<u32> {
                                 },
                                 None => None,
                             }
-                            
-                        },
+                        }
                         _ => None,
-                    }
-                })
-                .collect::<Vec<u32>>();
+                    })
+                    .collect::<Vec<u32>>();
                 if res.len() != 2 {
                     res = vec![];
                 } else {
