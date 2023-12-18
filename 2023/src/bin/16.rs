@@ -54,15 +54,14 @@ impl Cell {
 
 fn walk(
     field: &[Vec<Cell>],
+    size: (i32, i32),
     mut pos: (i32, i32),
     mut dir: Direction,
     cache: &mut HashSet<(Direction, (i32, i32))>,
 ) -> u32 {
     let mut steps = 0;
 
-    let (height, width) = (field.len() as i32 - 1, field[0].len() as i32 - 1);
-
-    if pos.0.clamp(0, height) != pos.0 || pos.1.clamp(0, width) != pos.1 {
+    if pos.0.clamp(0, size.0) != pos.0 || pos.1.clamp(0, size.1) != pos.1 {
         return steps;
     }
 
@@ -84,7 +83,7 @@ fn walk(
                 dir = new_dir;
                 pos = (pos.0 + dir.0, pos.1 + dir.1);
                 // println!("-- New pos: {:?}, dir: {:?}, steps: {}", pos, dir, steps);
-                if pos.0.clamp(0, height) != pos.0 || pos.1.clamp(0, width) != pos.1 {
+                if pos.0.clamp(0, size.0) != pos.0 || pos.1.clamp(0, size.1) != pos.1 {
                     break;
                 }
 
@@ -94,7 +93,8 @@ fn walk(
             }
             ResultDirection::Bidirectional(new_dir_1, new_dir_2) => {
                 // println!("Found bidirectional");
-                steps += walk(field, pos, new_dir_1, cache) + walk(field, pos, new_dir_2, cache);
+                steps += walk(field, size, pos, new_dir_1, cache)
+                    + walk(field, size, pos, new_dir_2, cache);
                 break;
             }
         }
@@ -113,12 +113,48 @@ pub fn part_one(input: &str) -> Option<u32> {
         })
         .collect();
 
+    let size = (field.len() as i32 - 1, field[0].len() as i32 - 1);
     let mut cache = HashSet::new();
-    Some(walk(&field, (0, 0), RIGHT, &mut cache))
+    Some(walk(&field, size, (0, 0), RIGHT, &mut cache))
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    None
+    let field: Vec<Vec<Cell>> = input
+        .lines()
+        .map(|line| {
+            line.chars()
+                .map(|c| Cell::try_from(c).expect("wrong input"))
+                .collect::<Vec<Cell>>()
+        })
+        .collect();
+
+    let size = (field.len() as i32 - 1, field[0].len() as i32 - 1);
+    [DOWN, LEFT, UP, RIGHT]
+        .iter()
+        .map(|&d| {
+            if d == DOWN {
+                (0..size.1)
+                    .map(|i| walk(&field, size, (0, i), d, &mut HashSet::new()))
+                    .max()
+                    .unwrap()
+            } else if d == UP {
+                (0..size.1)
+                    .map(|i| walk(&field, size, (size.0, i), d, &mut HashSet::new()))
+                    .max()
+                    .unwrap()
+            } else if d == RIGHT {
+                (0..size.0)
+                    .map(|j| walk(&field, size, (j, 0), d, &mut HashSet::new()))
+                    .max()
+                    .unwrap()
+            } else {
+                (0..size.0)
+                    .map(|j| walk(&field, size, (j, size.1), d, &mut HashSet::new()))
+                    .max()
+                    .unwrap()
+            }
+        })
+        .max()
 }
 
 #[cfg(test)]
